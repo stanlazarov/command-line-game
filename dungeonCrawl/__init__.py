@@ -1,2 +1,5 @@
+from dungeonCrawl.loop import game_loop
+
+
 def main():
-    pass
+    game_loop()
