@@ -1,3 +1,6 @@
+from dungeonCrawl.models import Item
+
+
 def maze_1():
     N = 20
     adj_matrix = [
@@ -22,8 +25,8 @@ def maze_1():
         [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
     ]
-    items = [False, False, False, False, False, False, False, False, False, False,
-             'red_key', False, 'blue_key', False, False, False, False, False, False, False]
+    items = [Item(name='sword', weight=2), False, False, False, False, Item(name='helm', weight=1), False, False, False, False,
+             Item(name='red_key', weight=0.2), False, Item(name='blue_key', weight=0.2), False, False, False, False, False, False, False]
     locked = [False, False, False, False, False, False, False, False, False, False,
-              False, 'red', False, False, 'blue', False, False, False, False, False]
+              False, 'red_key', False, False, 'blue_key', False, False, False, False, False]
     return (N, adj_matrix, items, locked)

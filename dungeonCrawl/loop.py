@@ -1,5 +1,5 @@
 from dungeonCrawl.mazes import maze_1
-from dungeonCrawl.models import Player, Maze
+from dungeonCrawl.models import Player, Maze, Item  # tmp item
 
 
 class Commands(object):
@@ -15,15 +15,20 @@ class Commands(object):
 
     @staticmethod
     def location(player, maze):
-        print(player.name, 'is currently in room', player.current_room)
+        if player.current_room == 17:
+            print('Congratulations, you have reached the end of the maze!')
+
+        print('{} is currently in room {}'.format(
+            player.name, player.current_room))
 
         if maze.has_item(player.current_room):
-            print("This room has an item:", maze.items[player.current_room])
+            print('This room has an item: {}'.format(
+                maze.items[player.current_room].name))
 
         exits = maze.get_adjacent_rooms(player.current_room)
         print('The available exits are to:')
         for exit in exits:
-            print('room', exit)
+            print('room {}'.format(exit))
 
     @staticmethod
     def go_to(player, maze, room):
@@ -33,24 +38,49 @@ class Commands(object):
             return
         else:
             if maze.is_locked(room):
-                print('This room is locked and needs a',
-                      maze.locked[room], 'key to be unlocked')
-                return
-                # Check if the player has that key and whether he wants to unlock it
-            player.current_room = room
-            Commands.location(player, maze)
+                print('This room is locked and needs a {} key to be unlocked'.format(
+                    maze.locked[room]))
+                if player.has_item(maze.locked[room]):
+                    while True:
+                        unlock = input(
+                            'Do you want to unlock the door with your {}? (yes/no) :'.format(maze.locked[room]))
+                        if unlock == 'yes':
+                            print('You unlocked the door')
+                            player.drop_item(maze.locked[room])
+                            player.current_room = room
+                            Commands.location(player, maze)
+                            break
+                        elif unlock == 'no':
+                            break
+                        else:
+                            print('Type yes or no')
+
+            else:
+                player.current_room = room
+                Commands.location(player, maze)
 
     @staticmethod
-    def items():
-        pass  # TODO
+    def items(player):
+        if len(player.inventory) == 0:
+            print('You have no items')
+        else:
+            print('Weight: {}/{}'.format(player.current_weight, player.weight_capacity))
+            print('items:')
+            for item in player.inventory:
+                print('{} ({})'.format(item.name, item.weight))
 
     @staticmethod
-    def pick_up(item):
-        pass  # TODO
+    def pick_up(player, maze, item_name):
+        if not maze.items[player.current_room]:
+            print('This room does not have items')
+        elif not maze.items[player.current_room].name == item_name:
+            print('Wrong item name')
+        elif player.add_item(maze.items[player.current_room]):
+            maze.items[player.current_room] = False
 
     @staticmethod
-    def drop(item):
-        pass  # TODO
+    def drop(player, item_name):
+        player.drop_item(item_name)
 
 
 def game_loop():
@@ -61,6 +91,7 @@ def game_loop():
 
     Commands.location(player, maze)
     print('Type help to get the list of commands.')
+    player.add_item(Item(name='red_key', weight=0.2))
     while True:
         cmd = input('>')
         split_cmd = cmd.split()
@@ -74,10 +105,10 @@ def game_loop():
         elif split_cmd[0] == 'go' and split_cmd[1] == 'to':
             Commands.go_to(player, maze, int(split_cmd[3]))
         elif cmd == 'items':
-            Commands.items()
+            Commands.items(player)
         elif split_cmd[0] == 'pick' and split_cmd[1] == 'up':
-            Commands.pick_up(split_cmd[2])
+            Commands.pick_up(player, maze, split_cmd[2])
         elif split_cmd[0] == 'drop':
-            Commands.drop(split_cmd[1])
+            Commands.drop(player, split_cmd[1])
         else:
             print('invalid command. (type help to get the list of commands)')
