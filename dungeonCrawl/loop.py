@@ -1,5 +1,5 @@
 from dungeonCrawl.mazes import maze_1
-from dungeonCrawl.models import Player, Maze, Item  # tmp item
+from dungeonCrawl.models import Player, Maze
 
 
 class Commands(object):
@@ -11,15 +11,21 @@ class Commands(object):
         print('- items = prints the list of the items the player\'s backpack.')
         print('- pick up <item_name> = the player will pick up the item and execute the items command.')
         print('- drop <item_name> = the player will drop the item and execute the items command.')
+        print(
+            '- eat <item_name> = the player eats a food item and restores 3 health points.')
         print('- quit = exits the game')
+        print('Every time you move to another room you lose 0.5 health points.')
 
     @staticmethod
     def location(player, maze):
         if player.current_room == 17:
-            print('Congratulations, you have reached the end of the maze!')
+            print('Congratulations, you have reached the end of the maze! You can go back and explore more or type "quit" to exit the game.')
+        if player.current_health <= 0:
+            print('You have reached 0 health points and died.')
+            return
 
-        print('{} is currently in room {}'.format(
-            player.name, player.current_room))
+        print('{} ({}/{}HP) is currently in room {}'.format(
+            player.name, player.current_health, player.max_health, player.current_room))
 
         if maze.has_item(player.current_room):
             print('This room has an item: {}'.format(
@@ -43,10 +49,12 @@ class Commands(object):
                 if player.has_item(maze.locked[room]):
                     while True:
                         unlock = input(
-                            'Do you want to unlock the door with your {}? (yes/no) :'.format(maze.locked[room]))
+                            'Do you want to unlock the door with your {}? (yes/no): '.format(maze.locked[room]))
                         if unlock == 'yes':
                             print('You unlocked the door')
                             player.drop_item(maze.locked[room])
+                            maze.locked[room] = False
+                            player.current_health -= 0.5
                             player.current_room = room
                             Commands.location(player, maze)
                             break
@@ -56,6 +64,7 @@ class Commands(object):
                             print('Type yes or no')
 
             else:
+                player.current_health -= 0.5
                 player.current_room = room
                 Commands.location(player, maze)
 
@@ -67,7 +76,11 @@ class Commands(object):
             print('Weight: {}/{}'.format(player.current_weight, player.weight_capacity))
             print('items:')
             for item in player.inventory:
-                print('{} ({})'.format(item.name, item.weight))
+                if not item.is_food:
+                    print('{} ({})'.format(item.name, item.weight))
+                else:
+                    print('{} ({}) (food: can be eaten to restore 3 health points.)'.format(
+                        item.name, item.weight))
 
     @staticmethod
     def pick_up(player, maze, item_name):
@@ -82,6 +95,10 @@ class Commands(object):
     def drop(player, item_name):
         player.drop_item(item_name)
 
+    @staticmethod
+    def eat(player, item_name):
+        player.eat(item_name)
+
 
 def game_loop():
     name = input('Enter your character\'s name: ')
@@ -91,8 +108,9 @@ def game_loop():
 
     Commands.location(player, maze)
     print('Type help to get the list of commands.')
-    player.add_item(Item(name='red_key', weight=0.2))
     while True:
+        if player.current_health <= 0:
+            break
         cmd = input('>')
         split_cmd = cmd.split()
 
@@ -110,5 +128,7 @@ def game_loop():
             Commands.pick_up(player, maze, split_cmd[2])
         elif split_cmd[0] == 'drop':
             Commands.drop(player, split_cmd[1])
+        elif split_cmd[0] == 'eat':
+            Commands.eat(player, split_cmd[1])
         else:
             print('invalid command. (type help to get the list of commands)')
